@@ -108,6 +108,34 @@
       let activeProvider = '';
       let errorCount = 0;
       let loadedAnyTile = false;
+      let layerRepairCount = 0;
+      const mapElement = $('map');
+      // Is the *visible* viewport covered by real tile images?
+      // A partially rendered tile grid may emit no network errors.
+      const hasVisibleGaps = () => {
+        const viewport = mapElement.getBoundingClientRect();
+        const imgs = Array.from(mapElement.querySelectorAll('.leaflet-tile-loaded'))
+          .filter(img => img.complete && img.naturalWidth > 0)
+          .map(img => img.getBoundingClientRect());
+        if (!imgs.length || viewport.width < 150 || viewport.height < 150) return false;
+        const sampleX = [0.1, 0.3, 0.5, 0.7, 0.9];
+        const sampleY = [0.13, 0.35, 0.6, 0.83];
+        for (const x of sampleX) for (const y of sampleY) {
+          const px = viewport.left + viewport.width * x;
+          const py = viewport.top + viewport.height * y;
+          if (!imgs.some(rect =>
+            px >= rect.left + 2 && px <= rect.right - 2 &&
+            py >= rect.top + 2 && py <= rect.bottom - 2
+          )) return true;
+        }
+        return false;
+      };
+      const refreshMapSize = () => {
+        if (!map) return;
+        const box = mapElement.getBoundingClientRect();
+        if (box.width < 150 || box.height < 150) return;
+        map.invalidateSize({pan:false, debounceMoveend:true});
+      };
       const setBasemap = (id, automatic) => {
         const entry = providers[id];
         if (!entry || !map) return;
@@ -118,15 +146,32 @@
         activeProvider = id;
         errorCount = 0;
         loadedAnyTile = false;
+        layerRepairCount = 0;
         basemapSelect.value = id;
         basemap = L.tileLayer(entry.url, Object.assign({
           updateWhenIdle:true, keepBuffer:2, crossOrigin:false
         }, entry.options));
         basemap.on('tileload', () => { loadedAnyTile = true; });
         basemap.on('load', () => {
-          if (loadedAnyTile && activeProvider === id) {
-            setStatus('Aluskaart on laaditud: ' + entry.label + '.');
-          }
+          if (!loadedAnyTile || activeProvider !== id) return;
+          // Wait until all imagery from this batch has finished, then check
+          // the *actual* on-screen coverage, not just Leaflet's load event.
+          const layer = basemap;
+          setTimeout(() => {
+            if (basemap !== layer || !map) return;
+            refreshMapSize();
+            if (hasVisibleGaps()) {
+              if (layerRepairCount < 2) {
+                layerRepairCount++;
+                basemap.redraw();
+                setStatus('Täidan puuduvaid kaardiruute…');
+              } else {
+                setStatus('Kaardil on tühje alasid. Vajuta kaardi ülaosas nuppu ⟳, et kaardipildid uuesti laadida.');
+              }
+            } else {
+              setStatus('Aluskaart on laaditud: ' + entry.label + '.');
+            }
+          }, 400);
         });
         basemap.on('tileerror', () => {
           if (activeProvider !== id) return;
@@ -162,28 +207,33 @@
       areaLayer = L.layerGroup().addTo(map); placeLayer = L.layerGroup().addTo(map);
       map.setView([58.12,25.39], 10);
       refreshMarkers();
-      // Leaflet does not always notice dimension changes in responsive layouts.
+      // The map used to grow with its sidebar, after Leaflet had computed
+      // a smaller tile grid. A fixed viewport is defined in styles.css.
+      // Observe the *stage* size and re-measure once its final layout settles.
       if (typeof ResizeObserver !== 'undefined') {
         const observer = new ResizeObserver(() => {
-          if (map) map.invalidateSize({pan:false, debounceMoveend:true});
+          requestAnimationFrame(refreshMapSize);
         });
-        observer.observe($('map'));
+        observer.observe(document.querySelector('.map-stage'));
       }
-      window.addEventListener('resize', () => {
-        if (map) map.invalidateSize({pan:false, debounceMoveend:true});
+      window.addEventListener('resize', refreshMapSize);
+      window.addEventListener('pageshow', refreshMapSize);
+      window.addEventListener('load', refreshMapSize);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refreshMapSize();
       });
-      const refreshMapSize = () => {
-        if (map) map.invalidateSize({pan:false, debounceMoveend:true});
-      };
       map.whenReady(() => {
-        requestAnimationFrame(refreshMapSize);
+        requestAnimationFrame(() => requestAnimationFrame(refreshMapSize));
         setTimeout(refreshMapSize, 300);
         setTimeout(refreshMapSize, 1000);
       });
-      window.addEventListener('load', refreshMapSize);
-      window.addEventListener('pageshow', refreshMapSize);
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) refreshMapSize();
+      $('reload-map').addEventListener('click', () => {
+        refreshMapSize();
+        if (basemap) {
+          layerRepairCount = 0;
+          basemap.redraw();
+          setStatus('Laen kaardi uuesti…');
+        }
       });
       $('fit-map').addEventListener('click', () => {
         if (areas.length) map.fitBounds(L.latLngBounds(areas.map(a => [a.lat,a.lng])).pad(0.25), {maxZoom:11});

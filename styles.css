@@ -8,3 +8,19 @@
 /* Kaardi aluskaardi valik */
 .basemap-select{width:100%;padding:11px 12px;background:#f7f8f5;color:var(--ink);border:1px solid #dce4df;border-radius:6px;font-size:12px;margin-bottom:20px;min-height:42px}
 .basemap-select:focus-visible{outline:3px solid #c8ea84;outline-offset:2px}
+
+/* 2026-11-02: stable Leaflet viewport. Without a fixed grid height the
+   right map column stretches to the sidebar's content and can retain a
+   tile matrix calculated for a smaller/older rectangle. */
+.map-shell{height:680px;min-height:0;align-items:stretch}
+.map-sidebar{min-height:0;overflow-y:auto}
+.map-stage{height:680px;min-height:0;align-self:start;overflow:hidden}
+.map-stage #map{height:100%;width:100%}
+@media(max-width:760px){
+  .map-shell{height:auto;min-height:0}
+  .map-sidebar{min-height:0;overflow-y:visible}
+  .map-stage{height:480px;min-height:0;flex:0 0 480px;width:100%}
+}
+@media(max-width:510px){
+  .map-stage{height:390px;min-height:0;flex-basis:390px}
+}
