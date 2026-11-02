@@ -60,7 +60,7 @@ Tavaline HTML, CSS, JavaScript, Leaflet 1.9.4 ja OpenStreetMapi kaardiplaadid; s
 - https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site
 
 ## Järgmised sammud enne päriskasutust
-
+Mulgi kriisikaardi veebilehe arendus.
 1. Leppida vallaga kokku vastutav sisuhaldur, kriisiteadete kinnitaja ja uuendamise sagedus.
 2. Kinnitada iga avaliku punkti asukoht, teenus, avamistingimused, allikas ja infovärskus.
 3. Ehitada lihtne kasutajaõigustega haldusvaade või ametlike andmete automaatliidestus, teavitused ja jälgitav muudatuste ajalugu.
