@@ -66,3 +66,11 @@ Mulgi kriisikaardi veebilehe arendus.
 3. Ehitada lihtne kasutajaõigustega haldusvaade või ametlike andmete automaatliidestus, teavitused ja jälgitav muudatuste ajalugu.
 4. Testida ligipääsetavust (WCAG), mobiiltelefoni kasutust, jõudlust, kaardi riket ja sidekatkestust.
 5. Arutada vallaga ametlikku domeeni, omandit ja avaldamise luba.
+
+## Aluskaart (Maa- ja Ruumiamet)
+
+Aluskaardi vaikimisi valik on Maa- ja Ruumiameti **Eesti kaart**. Kasutaja saab valida ka MaRu ortofoto ja OpenStreetMapi. Kasutatakse MaRu TMS kaarte projektsioonis EPSG:3857 (GMC), Leafleti `tms:true` valikut ja teenusepõhist tunnust `ASUTUS=MULGI-KRIISIKAART&KESKKOND=TEST&IS=KRIISIKAART` ametliku MapCache juhendi 4.2 järgi. Kasutusel on teenusepakkuja nõutud allikaviide. Kui esimesed MaRu kaardiplaadid ei laadi, aktiveeritakse varukaart OpenStreetMap. Kuna kriisikaardi praegune versioon töötab GitHub Pagesis, ei kasuta see eraldi kaardiplaatide proksiserverit. Enne ametliku teenusena kasutuselevõttu tuleb lepingu ja koormusnõuded Maa- ja Ruumiametiga üle täpsustada.
+
+Ametlikud juhendid:
+- https://geoportaal.maaamet.ee/est/teenused/wms-wfs-wcs-teenused/tms-wms-c-ja-wmts-teenused-p481.html
+- https://geoportaal.maaamet.ee/docs/WMS/MapCache_teenused_juhend_v2.pdf

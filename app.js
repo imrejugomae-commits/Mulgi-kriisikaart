@@ -83,13 +83,81 @@
       return;
     }
     try {
-      map = L.map('map', { zoomControl:false, scrollWheelZoom:false });
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:18, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMapi kaastöölised</a>'}).addTo(map);
+      map = L.map('map', { zoomControl:false, scrollWheelZoom:false, preferCanvas:true });
+      const maruAttribution = 'Aluskaart: <a href="https://geoportaal.maaruum.ee/" target="_blank" rel="noopener noreferrer">Maa- ja Ruumiamet</a> (2026)';
+      const osmAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMapi kaastöölised</a>';
+      // MaRu TMS (EPSG:3857, GMC) uses flipped Y coordinates (tms:true).
+      // Usage identification in requests replaces a separate tile proxy according
+      // to MaRu MapCache service instructions, section 4.2.
+      const maruBase = 'https://tiles.maaamet.ee/tm/tms/1.0.0/';
+      const maruId = '&ASUTUS=MULGI-KRIISIKAART&KESKKOND=TEST&IS=KRIISIKAART';
+      const providers = {
+        maa: { label:'Maa- ja Ruumiameti kaart',
+          url:maruBase + 'kaart@GMC/{z}/{x}/{y}.png' + maruId,
+          options:{tms:true, maxZoom:18, attribution:maruAttribution}},
+        foto: { label:'Maa- ja Ruumiameti ortofoto',
+          url:maruBase + 'foto@GMC/{z}/{x}/{y}.png' + maruId,
+          options:{tms:true, maxZoom:18, attribution:maruAttribution}},
+        osm: { label:'OpenStreetMap',
+          url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          options:{maxZoom:18, attribution:osmAttribution, referrerPolicy:'strict-origin-when-cross-origin'}}
+      };
+      const basemapSelect = $('basemap-select');
+      let basemap = null;
+      let activeProvider = '';
+      let errorCount = 0;
+      let loadedAnyTile = false;
+      const setBasemap = (id, automatic) => {
+        const entry = providers[id];
+        if (!entry || !map) return;
+        if (basemap) {
+          basemap.off();
+          map.removeLayer(basemap);
+        }
+        activeProvider = id;
+        errorCount = 0;
+        loadedAnyTile = false;
+        basemapSelect.value = id;
+        basemap = L.tileLayer(entry.url, Object.assign({
+          updateWhenIdle:true, keepBuffer:2, crossOrigin:false
+        }, entry.options));
+        basemap.on('tileload', () => { loadedAnyTile = true; });
+        basemap.on('load', () => {
+          if (loadedAnyTile && activeProvider === id) {
+            setStatus('Aluskaart on laaditud: ' + entry.label + '.');
+          }
+        });
+        basemap.on('tileerror', () => {
+          if (activeProvider !== id) return;
+          errorCount += 1;
+          if (id !== 'osm' && errorCount >= 3 && !loadedAnyTile) {
+            setBasemap('osm', true);
+          } else if (errorCount === 3) {
+            setStatus('Osa kaardipiltidest ei laadi. Proovi valida teine aluskaart. Teave asukohtade kohta on ka tekstina saadaval.');
+          }
+        });
+        basemap.addTo(map);
+        setStatus(automatic
+          ? 'Maa- ja Ruumiameti kaarditeenus ei laadinud. Kasutan varuvariandina OpenStreetMapi.'
+          : 'Laen aluskaarti: ' + entry.label + '…');
+      };
+      basemapSelect.addEventListener('change', event => setBasemap(event.target.value, false));
+      setBasemap('maa', false);
       L.control.zoom({position:'bottomright'}).addTo(map);
       areaLayer = L.layerGroup().addTo(map); placeLayer = L.layerGroup().addTo(map);
       map.setView([58.12,25.39], 10);
       refreshMarkers();
-      setTimeout(() => map.invalidateSize(), 180);
+      // Leaflet does not always notice dimension changes in responsive layouts.
+      if (typeof ResizeObserver !== 'undefined') {
+        const observer = new ResizeObserver(() => {
+          if (map) map.invalidateSize({pan:false, debounceMoveend:true});
+        });
+        observer.observe($('map'));
+      }
+      window.addEventListener('resize', () => {
+        if (map) map.invalidateSize({pan:false, debounceMoveend:true});
+      });
+      setTimeout(() => map.invalidateSize({pan:false}), 200);
       $('fit-map').addEventListener('click', () => {
         if (areas.length) map.fitBounds(L.latLngBounds(areas.map(a => [a.lat,a.lng])).pad(0.25), {maxZoom:11});
       });

@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#102d35">
   <meta name="description" content="Mulgi valla kriisiinfo ja kaardi veebilehe näidis. Mitte ametlik kriisiteavituse kanal.">
   <title>Mulgi valla kriisikaart — arendusnäidis</title>
+  <link rel="preconnect" href="https://tiles.maaamet.ee">
   <link rel="preconnect" href="https://tile.openstreetmap.org">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzxH1VZMIi3K7oI3I2Q3bE1A+4=" crossorigin="" onerror="this.removeAttribute('integrity')">
   <link rel="stylesheet" href="./styles.css">
@@ -70,7 +71,13 @@
       </div>
       <div class="map-shell">
         <aside class="map-sidebar" aria-label="Kaardi otsing ja kihid">
-          <div class="sidebar-head"><span>KAARDIKIHID</span><span class="tiny-dot" aria-hidden="true"></span></div>
+          <div class="sidebar-head"><span>ALUSKAART JA KIHID</span><span class="tiny-dot" aria-hidden="true"></span></div>
+          <label class="search-label" for="basemap-select">Kaardi aluskaart</label>
+          <select id="basemap-select" class="basemap-select" aria-label="Vali kaardi aluskaart">
+            <option value="maa">Maa- ja Ruumiameti kaart</option>
+            <option value="foto">Maa- ja Ruumiameti ortofoto</option>
+            <option value="osm">OpenStreetMap</option>
+          </select>
           <label class="search-label" for="search-input">Otsi piirkonda või punkti</label>
           <div class="search-wrap"><span aria-hidden="true">⌕</span><input type="search" id="search-input" placeholder="Näiteks Abja-Paluoja" autocomplete="off"></div>
           <p class="filter-title">Näita kaardil</p>
