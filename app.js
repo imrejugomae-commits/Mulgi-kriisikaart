@@ -87,8 +87,9 @@
       const maruAttribution = 'Aluskaart: <a href="https://geoportaal.maaruum.ee/" target="_blank" rel="noopener noreferrer">Maa- ja Ruumiamet</a> (2026)';
       const osmAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMapi kaastöölised</a>';
       // MaRu TMS (EPSG:3857, GMC) uses flipped Y coordinates (tms:true).
-      // Usage identification in requests replaces a separate tile proxy according
-      // to MaRu MapCache service instructions, section 4.2.
+      // The documented TMS example uses '&ASUTUS=...' in the tile URL.
+      // An app identifier is NOT a substitute for the official proxy/service-use terms.
+      // For a public production deployment, agree the proxy/terms with Maa- ja Ruumiamet.
       const maruBase = 'https://tiles.maaamet.ee/tm/tms/1.0.0/';
       const maruId = '&ASUTUS=MULGI-KRIISIKAART&KESKKOND=TEST&IS=KRIISIKAART';
       const providers = {
@@ -130,12 +131,26 @@
         basemap.on('tileerror', () => {
           if (activeProvider !== id) return;
           errorCount += 1;
-          if (id !== 'osm' && errorCount >= 3 && !loadedAnyTile) {
+          // Previously fall-back happened only if ZERO tiles loaded.
+          // On the screenshot some tiles loaded and others failed, leaving grey squares.
+          // One failed MaRu tile is enough to use a COMPLETE OpenStreetMap base layer
+          // rather than keep a misleading patchwork of partially loaded map tiles.
+          if (id !== 'osm') {
             setBasemap('osm', true);
-          } else if (errorCount === 3) {
-            setStatus('Osa kaardipiltidest ei laadi. Proovi valida teine aluskaart. Teave asukohtade kohta on ka tekstina saadaval.');
+          } else if (errorCount === 1) {
+            setStatus('Kaardi osad ei laadi ka varukaardilt. Kontrolli internetiühendust või proovi hiljem uuesti. Valla kriisiteabe aadressid on eraldi tekstina saadaval.');
           }
         });
+        // A stalled tile server may leave the layer blank without emitting tileerror.
+        // Only fall back when there has been no successful tile at all.
+        if (id !== 'osm') {
+          const thisLayer = basemap;
+          setTimeout(() => {
+            if (basemap === thisLayer && !loadedAnyTile && map) {
+              setBasemap('osm', true);
+            }
+          }, 6500);
+        }
         basemap.addTo(map);
         setStatus(automatic
           ? 'Maa- ja Ruumiameti kaarditeenus ei laadinud. Kasutan varuvariandina OpenStreetMapi.'
@@ -157,7 +172,19 @@
       window.addEventListener('resize', () => {
         if (map) map.invalidateSize({pan:false, debounceMoveend:true});
       });
-      setTimeout(() => map.invalidateSize({pan:false}), 200);
+      const refreshMapSize = () => {
+        if (map) map.invalidateSize({pan:false, debounceMoveend:true});
+      };
+      map.whenReady(() => {
+        requestAnimationFrame(refreshMapSize);
+        setTimeout(refreshMapSize, 300);
+        setTimeout(refreshMapSize, 1000);
+      });
+      window.addEventListener('load', refreshMapSize);
+      window.addEventListener('pageshow', refreshMapSize);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refreshMapSize();
+      });
       $('fit-map').addEventListener('click', () => {
         if (areas.length) map.fitBounds(L.latLngBounds(areas.map(a => [a.lat,a.lng])).pad(0.25), {maxZoom:11});
       });
