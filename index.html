@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="et">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#102d35">
+  <meta name="description" content="Mulgi valla kriisiinfo ja kaardi veebilehe näidis. Mitte ametlik kriisiteavituse kanal.">
+  <title>Mulgi valla kriisikaart — arendusnäidis</title>
+  <link rel="preconnect" href="https://tile.openstreetmap.org">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzxH1VZMIi3K7oI3I2Q3bE1A+4=" crossorigin="" onerror="this.removeAttribute('integrity')">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script defer src="./data.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#sisu">Liigu põhisisuni</a>
+  <div class="demo-ribbon"><span class="dot"></span> ARENDUSNÄIDIS — MITTE AMETLIK OHUTEAVITUS <span class="dot"></span></div>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#avaleht" aria-label="Mulgi kriisikaardi avaleht">
+        <span class="brand-symbol" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="brand-words"><strong>MULGI</strong><small>KRIISIKAART</small></span>
+      </a>
+      <nav class="main-nav" aria-label="Peamenüü">
+        <a href="#kaart-sektsioon">Kaart</a>
+        <a href="#juhised">Käitumisjuhised</a>
+        <a href="#kontaktid">Kontaktid</a>
+      </nav>
+      <a class="header-link" href="https://www.kriis.ee/" target="_blank" rel="noopener noreferrer">Riiklik kriisiinfo <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <main id="sisu">
+    <section id="avaleht" class="hero">
+      <div class="hero-pattern" aria-hidden="true"></div>
+      <div class="container hero-layout">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="line"></span> MULGI VALD · VILJANDIMAA</div>
+          <h1>Oluline info.<br><em>Ühes kohas.</em></h1>
+          <p>Kriisideks valmisoleku juhised, vajalikud kontaktid ja tulevased ametlikult kinnitatud kriisipunktid ühel kaardil.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#kaart-sektsioon">Ava kriisikaart <span aria-hidden="true">↗</span></a>
+            <a class="btn btn-ghost" href="#juhised">Vaata juhiseid <span aria-hidden="true">↓</span></a>
+          </div>
+        </div>
+        <aside class="help-card" aria-label="Olulised telefonid">
+          <div class="help-card-header"><span>VAJAD ABI?</span><span class="help-card-icon" aria-hidden="true">✳</span></div>
+          <a class="phone-row" href="tel:112"><span><strong>112</strong><small>Vahetu oht elule või tervisele</small></span><span class="phone-arrow" aria-hidden="true">↗</span></a>
+          <a class="phone-row" href="tel:1247"><span><strong>1247</strong><small>Riigiinfo telefon</small></span><span class="phone-arrow" aria-hidden="true">↗</span></a>
+          <div class="help-card-footer">Kui vajad kiiret abi, helista. Ära jää veebilehe uuendust ootama.</div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="notice-strip" aria-label="Oluline täpsustus">
+      <div class="container notice-strip-inner">
+        <div class="notice-symbol" aria-hidden="true">!</div>
+        <p><strong>See on veebilehe prototüüp.</strong> Kohalike kriisiteadete ja kriisipunktide ametlik andmevoog ei ole veel ühendatud. Kaardil kuvatavad asulad <strong>ei tähista kriisiabipunkte</strong>.</p>
+        <a href="https://www.kriis.ee/" target="_blank" rel="noopener noreferrer">Ametlik info ↗</a>
+      </div>
+    </section>
+
+    <section id="kaart-sektsioon" class="map-section container">
+      <div class="section-intro">
+        <div><div class="eyebrow dark"><span class="line"></span> PIIRKONNA KAART</div><h2>Leia vajalik asukoht</h2><p>Sirvi piirkondi. Kriisipunktid ilmuvad siis, kui vastutaja on nende andmed kinnitanud.</p></div>
+        <span class="status-pill"><span class="pulse-dot"></span> Ametlikud kriisipunktid: <strong id="verified-count">0</strong></span>
+      </div>
+      <div class="map-shell">
+        <aside class="map-sidebar" aria-label="Kaardi otsing ja kihid">
+          <div class="sidebar-head"><span>KAARDIKIHID</span><span class="tiny-dot" aria-hidden="true"></span></div>
+          <label class="search-label" for="search-input">Otsi piirkonda või punkti</label>
+          <div class="search-wrap"><span aria-hidden="true">⌕</span><input type="search" id="search-input" placeholder="Näiteks Abja-Paluoja" autocomplete="off"></div>
+          <p class="filter-title">Näita kaardil</p>
+          <div class="filter-list" id="filter-list" aria-label="Vali kaardikihid"></div>
+          <div class="sidebar-divider"></div>
+          <div class="sidebar-list-head"><strong id="list-heading">Piirkonnad</strong><span id="list-count">4</span></div>
+          <div id="place-list" class="place-list" aria-live="polite"></div>
+          <p class="source-note">Asulate tähised on orienteerumiseks. Need ei näita varjumis-, evakuatsiooni- ega kerksuskeskusi.</p>
+        </aside>
+        <div class="map-stage">
+          <div id="map" role="application" aria-label="Mulgi valla ümbruse kaart"></div>
+          <div id="map-fallback" class="map-fallback" hidden><span aria-hidden="true">◈</span><strong>Kaart pole hetkel saadaval</strong><p>Internetiühendus või kaarditeenus võib olla katkenud. Kasuta allolevaid kirjalikke juhiseid ja ametlikke kanaleid.</p></div>
+          <div class="map-top-label"><span class="map-top-indicator"></span> Mulgi vald · asulate ülevaade</div>
+          <div class="map-toolbar">
+            <button id="fit-map" type="button" title="Näita kõiki asulaid" aria-label="Näita kõiki asulaid">⌗</button>
+            <button id="my-location" type="button" title="Leia minu asukoht" aria-label="Leia minu asukoht">◎</button>
+          </div>
+          <div class="map-bottom-label"><span class="legend-dot"></span> Asula keskpunkt <span class="legend-separator">|</span> Kriisipunktide asukohad lisatakse kinnitamisel</div>
+        </div>
+      </div>
+      <p id="map-status" class="map-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="juhised" class="guides-section">
+      <div class="container">
+        <div class="section-intro guides-intro"><div><div class="eyebrow dark"><span class="line"></span> TARK ON OLLA VALMIS</div><h2>Kuidas kriisiolukorras toimida?</h2><p>Üldised juhised. Täpse ohu korral järgi riiklikke ohuteateid ja ametkondade korraldusi.</p></div><a class="text-link" href="https://www.olevalmis.ee/" target="_blank" rel="noopener noreferrer">Kõik valmisoleku juhised ↗</a></div>
+        <div class="guide-grid">
+          <article class="guide-card"><span class="guide-icon" aria-hidden="true">◕</span><div class="guide-number">01 /</div><h3>Elektrikatkestus</h3><p>Varu joogivett, toitu ja laetud akupank. Jälgi ametlikke teateid ning elektrivõrgu infot.</p><a href="https://www.kriis.ee/elekter" target="_blank" rel="noopener noreferrer">Loe juhiseid <span aria-hidden="true">↗</span></a></article>
+          <article class="guide-card"><span class="guide-icon" aria-hidden="true">⌂</span><div class="guide-number">02 /</div><h3>Varjumine</h3><p>Vahetu ohu korral leia lähim turvaline siseruum, eemal akendest. Järgi ametlikku ohuteavitust.</p><a href="https://www.olevalmis.ee/" target="_blank" rel="noopener noreferrer">Loe juhiseid <span aria-hidden="true">↗</span></a></article>
+          <article class="guide-card"><span class="guide-icon" aria-hidden="true">≋</span><div class="guide-number">03 /</div><h3>Vesi ja esmatarbed</h3><p>Mõtle läbi oma pere vee-, toidu-, ravimite ja sidevaru. Planeeri toimetulek mitmeks päevaks.</p><a href="https://www.olevalmis.ee/" target="_blank" rel="noopener noreferrer">Loe juhiseid <span aria-hidden="true">↗</span></a></article>
+          <article class="guide-card"><span class="guide-icon" aria-hidden="true">✳</span><div class="guide-number">04 /</div><h3>Ohuteavitus</h3><p>Jälgi EE-ALARM-i, riiklikke teateid ja kohaliku omavalitsuse kinnitatud infot. Ära jaga kuulujutte.</p><a href="https://www.kriis.ee/" target="_blank" rel="noopener noreferrer">Riiklik kriisiinfo <span aria-hidden="true">↗</span></a></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="kontaktid" class="contacts-section container">
+      <div class="contact-main"><div class="eyebrow"><span class="line"></span> HOIA INFO KÄEPÄRAST</div><h2>Kriisis loeb<br><em>usaldusväärne teave.</em></h2><p>Kasuta allpool ametlikke teabekanaleid. Mulgi valla erakorralised kontaktid ja piirkonnapõhised teated lisatakse pärast vallapoolset kinnitamist.</p></div>
+      <div class="contact-links">
+        <a href="tel:112"><span><small>HÄDAABI</small><strong>112</strong></span><span aria-hidden="true">↗</span></a>
+        <a href="tel:1247"><span><small>RIIGIINFO</small><strong>1247</strong></span><span aria-hidden="true">↗</span></a>
+        <a href="https://www.kriis.ee/" target="_blank" rel="noopener noreferrer"><span><small>RIIKLIK KRIISIINFO</small><strong>kriis.ee</strong></span><span aria-hidden="true">↗</span></a>
+        <a href="https://mulgivald.ee/" target="_blank" rel="noopener noreferrer"><span><small>KOHALIK OMAVALITSUS</small><strong>mulgivald.ee</strong></span><span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+  </main>
+  <footer class="footer"><div class="container footer-inner"><div class="footer-brand"><span class="footer-diamond">◇</span><strong>MULGI KRIISIKAART</strong><span>Veebilehe arendusnäidis</span></div><p>See veebileht ei ole ametlik kriisikanal. Andmed tuleb enne avalikku kasutuselevõttu kooskõlastada Mulgi Vallavalitsusega.</p><span>Kaardi alusandmed © OpenStreetMapi kaastöölised</span></div></footer>
+</body>
+</html>
